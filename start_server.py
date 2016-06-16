@@ -6,6 +6,7 @@ matplotlib.use('QT4Agg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt4 import NavigationToolbar2QT as NavigationToolbar
 import numpy as np
 
 
@@ -67,6 +68,8 @@ class MyFigure(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.vbox = QtGui.QVBoxLayout(self)
         self.sc = MyStaticMplCanvas(self, width=5, height=4, dpi=100)
+        self.navi_toolbar = NavigationToolbar(self.sc, self)
+        self.vbox.addWidget(self.navi_toolbar)
         self.vbox.addWidget(self.sc)
         
 
