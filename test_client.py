@@ -1,7 +1,8 @@
 from zmpl import pyplot as zplt
 
 def main():
-    zplt.figure()
+    fig = zplt.figure()
+    print(dir(fig))
     
 
 if __name__ == '__main__':

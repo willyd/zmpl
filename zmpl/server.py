@@ -1,3 +1,4 @@
+import re
 import sys
 import time
 
@@ -95,9 +96,15 @@ class ServerMainWindow(QtGui.QMainWindow):
         if result is None:
             return dict(id=None)
         else:
-            result_dict = dict(id=id(result), fns=[])
+            result_dict = dict(id=id(result),
+                               name=result.__class__.__name__,
+                               fns=[])
             for attr in dir(result):
-                if callable(getattr(result, attr)):
+                special = re.match(r"__.+__", attr)
+                #if special:
+                    #print('attr {} is special'.format(attr))
+                if not special and callable(getattr(result, attr)):
+                    #print('adding {}'.format(attr))
                     result_dict['fns'].append(attr)
             return result_dict
     
