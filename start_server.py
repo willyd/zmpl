@@ -5,21 +5,21 @@ import matplotlib
 matplotlib.use('QT4Agg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+from matplotlib.figure import Figure as MplFigure
 from matplotlib.backends.backend_qt4 import NavigationToolbar2QT as NavigationToolbar
 import numpy as np
 
 
-class MyMplCanvas(FigureCanvas):
+class MplCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
+        fig = MplFigure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         # We want the axes cleared every time plot() is called
         self.axes.hold(False)
 
-        self.compute_initial_figure()
+        # self.compute_initial_figure()
 
         #
         FigureCanvas.__init__(self, fig)
@@ -30,11 +30,8 @@ class MyMplCanvas(FigureCanvas):
                                    QtGui.QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
 
-    def compute_initial_figure(self):
-        pass
 
-
-class MyStaticMplCanvas(MyMplCanvas):
+class MyStaticMplCanvas(MplCanvas):
     """Simple canvas with a sine plot."""
 
     def compute_initial_figure(self):
@@ -43,11 +40,11 @@ class MyStaticMplCanvas(MyMplCanvas):
         self.axes.plot(t, s)
 
 
-class MyDynamicMplCanvas(MyMplCanvas):
+class MyDynamicMplCanvas(MplCanvas):
     """A canvas that updates itself every second with a new plot."""
 
     def __init__(self, *args, **kwargs):
-        MyMplCanvas.__init__(self, *args, **kwargs)
+        MplCanvas.__init__(self, *args, **kwargs)
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.update_figure)
         timer.start(1000)
@@ -62,12 +59,12 @@ class MyDynamicMplCanvas(MyMplCanvas):
         self.axes.plot([0, 1, 2, 3], l, 'r')
         self.draw()
 
-class MyFigure(QtGui.QDialog):
+class Figure(QtGui.QDialog):
 
     def __init__(self, parent):
         QtGui.QDialog.__init__(self, parent)
         self.vbox = QtGui.QVBoxLayout(self)
-        self.sc = MyStaticMplCanvas(self, width=5, height=4, dpi=100)
+        self.sc = MplCanvas(self, width=5, height=4, dpi=100)
         self.navi_toolbar = NavigationToolbar(self.sc, self)
         self.vbox.addWidget(self.navi_toolbar)
         self.vbox.addWidget(self.sc)

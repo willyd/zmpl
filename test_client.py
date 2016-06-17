@@ -1,5 +1,8 @@
-from zmpl.client import Client
+from zmpl import pyplot as zplt
 
-c = Client()
-c.send('hello')
-c.send('salut')
+def main():
+    zplt.figure()
+    
+
+if __name__ == '__main__':
+    main()
