@@ -3,6 +3,7 @@ import sys
 import time
 
 import matplotlib
+from matplotlib import pyplot as plt
 import zmq
 from PyQt4 import QtCore, QtGui
 
@@ -94,8 +95,10 @@ class ServerMainWindow(QtGui.QMainWindow):
 
     def generate_result_dict(self, result):
         if result is None:
+            print('None')
             return dict(id=None)
         else:
+            print(result.__class__.__name__)
             result_dict = dict(id=id(result),
                                name=result.__class__.__name__,
                                fns=[])
@@ -132,8 +135,11 @@ class ServerMainWindow(QtGui.QMainWindow):
     def figure(self, *args, **kwargs):
         fig = figure.Figure(self)
         fig.show()
-        self.objects[id(fig.canvas.fig)] = fig.canvas.fig
-        return fig.canvas.fig
+        self.objects[id(fig)] = fig
+        return fig
+
+    def draw(self, *args, **kwargs):
+        return plt.draw()
 
 class Server(object):
 

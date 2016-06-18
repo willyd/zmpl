@@ -68,3 +68,9 @@ class Figure(QtGui.QDialog):
         self.navi_toolbar = NavigationToolbar(self.canvas, self)
         self.vbox.addWidget(self.navi_toolbar)
         self.vbox.addWidget(self.canvas)
+
+    def add_subplot(self, *args, **kwargs):
+        ax = self.canvas.fig.add_subplot(*args, **kwargs)
+        # self.canvas.updateGeometry()
+        self.canvas.draw()
+        return ax

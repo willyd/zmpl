@@ -42,16 +42,23 @@ def _remote_call(fn):
 def _proxy(c, reply):
     global SERVER_TYPES
     id_ = reply['id']
-    assert id_ is not None
-    name = reply['name']
-    attrs = dict([(fn, _remote_call(fn)) for fn in reply['fns']])
-    cls = SERVER_TYPES.setdefault(name, type(name, (object, ), attrs))
-    p = cls()
-    p.client = c
-    p.id = id_
-    return p
+    if id_ is not None:
+        name = reply['name']
+        attrs = dict([(fn, _remote_call(fn)) for fn in reply['fns']])
+        cls = SERVER_TYPES.setdefault(name, type(name, (object, ), attrs))
+        p = cls()
+        p.client = c
+        p.id = id_
+        return p
+    else:
+        return None
     
 def figure(*args, **kwargs):
+    c = _initialize()    
+    reply = c.send(_create_rpc_message(None, _function_name(), args, kwargs))
+    return _proxy(c, reply)
+
+def draw(*args, **kwargs):
     c = _initialize()    
     reply = c.send(_create_rpc_message(None, _function_name(), args, kwargs))
     return _proxy(c, reply)
