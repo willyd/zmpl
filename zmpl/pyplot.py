@@ -1,3 +1,4 @@
+import sys
 from functools import partial
 
 from .client import Client
@@ -35,30 +36,59 @@ def _function_name():
     
 def _remote_call(fn):
     def _remote_call_impl(self, *args, **kwargs):
-        reply = self.client.send(_create_rpc_message(self.id, fn, args, kwargs))
-        return _proxy(self.client, reply)
+        reply = self._rpc_client.send(_create_rpc_message(self._rpc_id, fn, args, kwargs))
+        return _proxy(self._rpc_client, reply)
     return _remote_call_impl
 
 def _proxy(c, reply):
     global SERVER_TYPES
-    id_ = reply['id']
-    if id_ is not None:
-        name = reply['name']
-        attrs = dict([(fn, _remote_call(fn)) for fn in reply['fns']])
-        cls = SERVER_TYPES.setdefault(name, type(name, (object, ), attrs))
-        p = cls()
-        p.client = c
-        p.id = id_
-        return p
+    type_ = reply['type']
+    if type_ == '__object__':
+        return reply['object']
+    elif type_ == '__proxy__':
+       obj = reply['object'] 
+       id_ = obj['id']
+       if id_ is not None:
+           name = obj['name']
+           attrs = dict([(fn, _remote_call(fn)) for fn in obj['fns']])
+           cls = SERVER_TYPES.setdefault(name, type(name, (object, ), attrs))
+           p = cls()
+           p._rpc_client = c
+           p._rpc_id = id_
+           return p
+    elif type_ == '__error__':
+        raise reply['object']
     else:
-        return None
-    
-def figure(*args, **kwargs):
-    c = _initialize()    
-    reply = c.send(_create_rpc_message(None, _function_name(), args, kwargs))
-    return _proxy(c, reply)
+        raise Exception("Unkown reply type {}".format(type_))
 
-def draw(*args, **kwargs):
-    c = _initialize()    
-    reply = c.send(_create_rpc_message(None, _function_name(), args, kwargs))
-    return _proxy(c, reply)
+class RemoteController(object):
+
+    def __init__(self):
+        self._rpc_id = None
+        self.__rpc_client = None
+        self._server_process = None
+
+    def _initialize(self):
+        if self._server_process is None:
+            self._server_process = start_server_process()        
+        if self.__rpc_client is None:
+            self.__rpc_client = Client()
+
+    @property
+    def _rpc_client(self):
+        self._initialize()
+        return self.__rpc_client
+
+REMOTE_CONTROLLER_FNS = ['figure',
+                         'draw',
+                         'show',
+                         ]
+
+for fn in REMOTE_CONTROLLER_FNS:
+    setattr(RemoteController, fn, _remote_call(fn))
+    
+REMOTE_CONTROLLER = RemoteController()
+
+module_obj = sys.modules[__name__]
+for fn in REMOTE_CONTROLLER_FNS:
+    setattr(module_obj, fn, getattr(REMOTE_CONTROLLER, fn))

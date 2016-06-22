@@ -89,41 +89,54 @@ class ServerMainWindow(QtGui.QMainWindow):
         scope_obj = self.objects[id_]
         # call the function
         result_obj = getattr(scope_obj, fn)(*message['args'], **message['kwargs'])
-        if result_obj is not None:
+        if scope_obj.__class__.__module__.startswith('matplotlib'):
+            if isinstance(scope_obj, (plt.Figure,)):
+                self.text_edit.append("Redraw\n")
+                fig = scope_obj
+                fig.canvas.draw()
+            elif isinstance(scope_obj, (plt.Axes,)):
+                self.text_edit.append("Redraw\n")
+                fig = scope_obj.get_figure()
+                fig.canvas.draw()
+        if result_obj.__class__.__module__.startswith('matplotlib'):
             self.objects[id(result_obj)] = result_obj
         return result_obj
 
     def generate_result_dict(self, result):
-        if result is None:
-            print('None')
-            return dict(id=None)
-        else:
-            print(result.__class__.__name__)
-            result_dict = dict(id=id(result),
-                               name=result.__class__.__name__,
-                               fns=[])
+        if result.__class__.__module__.startswith('matplotlib'):
+            result_dict = dict(type='__proxy__',
+                               object=dict(id=id(result),
+                                           name=result.__class__.__name__,
+                                           fns=[]
+                                           )
+                              )
             for attr in dir(result):
                 special = re.match(r"__.+__", attr)
                 #if special:
                     #print('attr {} is special'.format(attr))
                 if not special and callable(getattr(result, attr)):
                     #print('adding {}'.format(attr))
-                    result_dict['fns'].append(attr)
-            return result_dict
+                    result_dict['object']['fns'].append(attr)
+        else:
+            result_dict = dict(type='__object__', object=result)                
+        return result_dict
     
     def signal_received(self, message):
         # we received a remote call process it
-        self.text_edit.append("Calling %s\n"%message['fn'])
         try:
-            result = self.process_remote_call(message)
+            self.text_edit.append("Calling %s\n"%message['fn'])
+            try:
+                result = self.process_remote_call(message)
+            except Exception as e:
+                result = None
+                self.text_edit.append("Error: %s\n"%e)
+            # append received call to text edit
+            res = self.generate_result_dict(result)
         except Exception as e:
-            result = None
-            self.text_edit.append("Error: %s\n"%e)
-        # append received call to text edit
-        
+            res = dict(type='__error__', object=e)
         # set the data to send back and wake the waiting thread 
         self.listener.mutex.lock()
-        self.listener.result = self.generate_result_dict(result)
+        self.listener.result = res
         self.listener.condition.wakeAll()
         self.listener.mutex.unlock()
 
@@ -135,11 +148,14 @@ class ServerMainWindow(QtGui.QMainWindow):
     def figure(self, *args, **kwargs):
         fig = figure.Figure(self)
         fig.show()
-        self.objects[id(fig)] = fig
-        return fig
+        self.objects[id(fig.canvas.fig)] = fig.canvas.fig
+        return fig.canvas.fig
 
     def draw(self, *args, **kwargs):
         return plt.draw()
+
+    def show(self, *args, **kwargs):
+        pass
 
 class Server(object):
 
