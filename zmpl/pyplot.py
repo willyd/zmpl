@@ -1,8 +1,10 @@
 import sys
 from functools import partial
 
+from zmpl import options
 from .client import Client
 from .server_process import start_server_process
+from .functions import MODULE_LEVEL_FUNCTIONS
 
 CLIENT = None
 SERVER_PROCESS = None
@@ -69,7 +71,7 @@ class RemoteController(object):
         self._server_process = None
 
     def _initialize(self):
-        if self._server_process is None:
+        if self._server_process is None and options['server_auto_start']:
             self._server_process = start_server_process()        
         if self.__rpc_client is None:
             self.__rpc_client = Client()
@@ -79,16 +81,11 @@ class RemoteController(object):
         self._initialize()
         return self.__rpc_client
 
-REMOTE_CONTROLLER_FNS = ['figure',
-                         'draw',
-                         'show',
-                         ]
-
-for fn in REMOTE_CONTROLLER_FNS:
+for fn in MODULE_LEVEL_FUNCTIONS:
     setattr(RemoteController, fn, _remote_call(fn))
     
 REMOTE_CONTROLLER = RemoteController()
 
 module_obj = sys.modules[__name__]
-for fn in REMOTE_CONTROLLER_FNS:
+for fn in MODULE_LEVEL_FUNCTIONS:
     setattr(module_obj, fn, getattr(REMOTE_CONTROLLER, fn))

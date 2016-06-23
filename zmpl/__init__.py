@@ -1,0 +1,1 @@
+options = dict(server_auto_start=True)

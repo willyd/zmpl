@@ -8,6 +8,7 @@ import zmq
 from PyQt4 import QtCore, QtGui
 
 from . import figure
+from .functions import MODULE_LEVEL_FUNCTIONS
 
 matplotlib.use('QT4Agg')
 
@@ -146,16 +147,33 @@ class ServerMainWindow(QtGui.QMainWindow):
         self.thread.wait()
 
     def figure(self, *args, **kwargs):
-        fig = figure.Figure(self)
-        fig.show()
-        self.objects[id(fig.canvas.fig)] = fig.canvas.fig
-        return fig.canvas.fig
+        fig = plt.figure(*args, **kwargs)
+        #fig = figure.Figure(self)
+        #fig.show()
+        #self.objects[id(fig.canvas.fig)] = fig #fig.canvas.fig
+        self.objects[id(fig)] = fig #fig.canvas.fig
+        return fig # fig.canvas.fig
+
+    def plot(self, *args, **kwargs):
+        return plt.plot(*args, **kwargs)        
+
+    def gcf(self, *args, **kwargs):
+        return plt.gcf(*args, **kwargs)
 
     def draw(self, *args, **kwargs):
-        return plt.draw()
+        return plt.draw(*args, **kwargs)
 
     def show(self, *args, **kwargs):
-        pass
+        return plt.show(*args, **kwargs)
+
+def _plt_call(fn):
+    def _plt_call_impl(self, *args, **kwargs):
+        plt_fn = getattr(plt, fn)
+        return plt_fn(*args, **kwargs)
+    return _plt_call_impl
+
+for fn in MODULE_LEVEL_FUNCTIONS:
+    setattr(ServerMainWindow, fn, _plt_call(fn))
 
 class Server(object):
 
