@@ -46,7 +46,11 @@ def _proxy(c, reply):
     global SERVER_TYPES
     type_ = reply['type']
     if type_ == '__object__':
-        return reply['object']
+        ret = reply['object']
+        if isinstance(ret, (list, tuple)):
+            ret_type = type(ret)
+            ret = ret_type([_proxy(c, item) for item in ret])
+        return ret
     elif type_ == '__proxy__':
        obj = reply['object'] 
        id_ = obj['id']
@@ -79,7 +83,7 @@ class RemoteController(object):
     @property
     def _rpc_client(self):
         self._initialize()
-        return self.__rpc_client
+        return self.__rpc_client      
 
 for fn in MODULE_LEVEL_FUNCTIONS:
     setattr(RemoteController, fn, _remote_call(fn))

@@ -55,7 +55,15 @@ class Listener(QtCore.QObject):
                 else:
                     raise e
 
+plt_figure = plt.figure
 
+def _figure_auto_show(*args, **kwargs):
+    f = plt_figure(*args, **kwargs)
+    f.show()
+    return f  
+
+plt.figure = _figure_auto_show    
+    
 class ServerMainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         QtGui.QMainWindow.__init__(self, parent)
@@ -76,7 +84,7 @@ class ServerMainWindow(QtGui.QMainWindow):
         
         self.thread.started.connect(self.listener.loop)
         self.listener.message.connect(self.signal_received)
-
+        
         self.objects = {None:self}
         
         QtCore.QTimer.singleShot(0, self.thread.start)    
@@ -90,21 +98,12 @@ class ServerMainWindow(QtGui.QMainWindow):
         scope_obj = self.objects[id_]
         # call the function
         result_obj = getattr(scope_obj, fn)(*message['args'], **message['kwargs'])
-        if scope_obj.__class__.__module__.startswith('matplotlib'):
-            if isinstance(scope_obj, (plt.Figure,)):
-                self.text_edit.append("Redraw\n")
-                fig = scope_obj
-                fig.canvas.draw()
-            elif isinstance(scope_obj, (plt.Axes,)):
-                self.text_edit.append("Redraw\n")
-                fig = scope_obj.get_figure()
-                fig.canvas.draw()
-        if result_obj.__class__.__module__.startswith('matplotlib'):
-            self.objects[id(result_obj)] = result_obj
+        plt.draw()
         return result_obj
 
     def generate_result_dict(self, result):
         if result.__class__.__module__.startswith('matplotlib'):
+            self.objects[id(result)] = result
             result_dict = dict(type='__proxy__',
                                object=dict(id=id(result),
                                            name=result.__class__.__name__,
@@ -118,6 +117,10 @@ class ServerMainWindow(QtGui.QMainWindow):
                 if not special and callable(getattr(result, attr)):
                     #print('adding {}'.format(attr))
                     result_dict['object']['fns'].append(attr)
+        elif isinstance(result, (list, tuple)):
+            ret_type = type(result)
+            ret = ret_type([self.generate_result_dict(item) for item in result])
+            result_dict = dict(type='__object__', object=ret)
         else:
             result_dict = dict(type='__object__', object=result)                
         return result_dict
@@ -146,34 +149,18 @@ class ServerMainWindow(QtGui.QMainWindow):
         self.thread.quit()
         self.thread.wait()
 
-    def figure(self, *args, **kwargs):
-        fig = plt.figure(*args, **kwargs)
-        #fig = figure.Figure(self)
-        #fig.show()
-        #self.objects[id(fig.canvas.fig)] = fig #fig.canvas.fig
-        self.objects[id(fig)] = fig #fig.canvas.fig
-        return fig # fig.canvas.fig
-
-    def plot(self, *args, **kwargs):
-        return plt.plot(*args, **kwargs)        
-
-    def gcf(self, *args, **kwargs):
-        return plt.gcf(*args, **kwargs)
-
-    def draw(self, *args, **kwargs):
-        return plt.draw(*args, **kwargs)
-
-    def show(self, *args, **kwargs):
-        return plt.show(*args, **kwargs)
-
 def _plt_call(fn):
-    def _plt_call_impl(self, *args, **kwargs):
+    def _plt_call_impl(self, *args, **kwargs):        
         plt_fn = getattr(plt, fn)
-        return plt_fn(*args, **kwargs)
+        res = plt_fn(*args, **kwargs)
+        return res
     return _plt_call_impl
 
 for fn in MODULE_LEVEL_FUNCTIONS:
-    setattr(ServerMainWindow, fn, _plt_call(fn))
+    try:
+        getattr(ServerMainWindow, fn)
+    except AttributeError:
+        setattr(ServerMainWindow, fn, _plt_call(fn))
 
 class Server(object):
 
