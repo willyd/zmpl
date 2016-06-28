@@ -85,6 +85,8 @@ class ServerMainWindow(QtGui.QMainWindow):
         self.thread.started.connect(self.listener.loop)
         self.listener.message.connect(self.signal_received)
         
+        self._auto_draw = True
+        
         self.objects = {None:self}
         
         QtCore.QTimer.singleShot(0, self.thread.start)    
@@ -98,7 +100,8 @@ class ServerMainWindow(QtGui.QMainWindow):
         scope_obj = self.objects[id_]
         # call the function
         result_obj = getattr(scope_obj, fn)(*message['args'], **message['kwargs'])
-        plt.draw()
+        if self._auto_draw:
+            plt.draw()
         return result_obj
 
     def generate_result_dict(self, result):
@@ -148,6 +151,12 @@ class ServerMainWindow(QtGui.QMainWindow):
         self.listener.running = False
         self.thread.quit()
         self.thread.wait()
+        
+    def auto_draw(self, *args, **kwargs):
+        if args:
+            assert type(args[0]) == bool
+            self._auto_draw = args[0]
+        return self._auto_draw
 
 def _plt_call(fn):
     def _plt_call_impl(self, *args, **kwargs):        

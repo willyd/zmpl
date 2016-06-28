@@ -85,11 +85,13 @@ class RemoteController(object):
         self._initialize()
         return self.__rpc_client      
 
-for fn in MODULE_LEVEL_FUNCTIONS:
+CLIENT_MODULE_LEVEL_FUNCTIONS = MODULE_LEVEL_FUNCTIONS + ['auto_draw', ]
+
+for fn in CLIENT_MODULE_LEVEL_FUNCTIONS:
     setattr(RemoteController, fn, _remote_call(fn))
     
 REMOTE_CONTROLLER = RemoteController()
 
 module_obj = sys.modules[__name__]
-for fn in MODULE_LEVEL_FUNCTIONS:
+for fn in CLIENT_MODULE_LEVEL_FUNCTIONS:
     setattr(module_obj, fn, getattr(REMOTE_CONTROLLER, fn))
