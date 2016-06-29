@@ -1,13 +1,16 @@
-import multiprocessing as mp
+import sys
+import subprocess
 
-from . import server
 
+from zmpl import server
 
 def _run_server():
     s = server.Server()
     s.run()
 
 def start_server_process():
-    p = mp.Process(target=_run_server)
-    p.start()
+    # don't use multiprocessing as it does not play well with
+    # the PTVS debug REPL
+    p = subprocess.Popen([sys.executable, server.__file__])
     return p
+    

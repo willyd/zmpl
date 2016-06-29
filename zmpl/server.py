@@ -7,8 +7,8 @@ from matplotlib import pyplot as plt
 import zmq
 from PyQt4 import QtCore, QtGui
 
-from . import figure
-from .functions import MODULE_LEVEL_FUNCTIONS
+from zmpl import figure
+from zmpl.functions import MODULE_LEVEL_FUNCTIONS
 
 matplotlib.use('QT4Agg')
 
@@ -181,3 +181,7 @@ class Server(object):
         mw = ServerMainWindow()
         mw.show()       
         sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    s = Server()
+    s.run()
