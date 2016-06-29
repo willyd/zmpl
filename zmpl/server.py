@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import zmq
 from PyQt4 import QtCore, QtGui
 
-from zmpl import figure
+from zmpl import options
 from zmpl.functions import MODULE_LEVEL_FUNCTIONS
 
 matplotlib.use('QT4Agg')
@@ -23,7 +23,7 @@ class Listener(QtCore.QObject):
         # Socket to talk to server
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.bind("tcp://127.0.0.1:5000")        
+        self.socket.bind(options['default_address'])        
         
         self.running = True
         self.mutex = QtCore.QMutex()
@@ -36,7 +36,7 @@ class Listener(QtCore.QObject):
         while self.running:
             try:
                 # received message without blocking
-                msg = self.socket.recv_pyobj(flags=zmq.NOBLOCK)                
+                msg = self.socket.recv_pyobj(flags=zmq.NOBLOCK)
                 # change result to None
                 self.mutex.lock()
                 self.result = None
@@ -89,7 +89,7 @@ class ServerMainWindow(QtGui.QMainWindow):
         
         self.objects = {None:self}
         
-        QtCore.QTimer.singleShot(0, self.thread.start)    
+        QtCore.QTimer.singleShot(0, self.thread.start)
 
     def process_remote_call(self, message):
         # get the scope or object called
@@ -177,7 +177,7 @@ class Server(object):
         pass
 
     def run(self):
-        app = QtGui.QApplication(sys.argv)       
+        app = QtGui.QApplication(sys.argv)
         mw = ServerMainWindow()
         mw.show()       
         sys.exit(app.exec_())

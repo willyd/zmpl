@@ -1,6 +1,6 @@
 import numpy as np
 import zmpl
-zmpl.options['server_auto_start'] = False
+zmpl.options['server_auto_start'] = True
 from zmpl import pyplot as zplt
 # from matplotlib import pyplot as zplt
 
