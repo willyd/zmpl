@@ -1,8 +1,9 @@
 import numpy as np
 import zmpl
-zmpl.options['server_auto_start'] = True
+zmpl.options['server_auto_start'] = False
 from zmpl import pyplot as zplt
 # from matplotlib import pyplot as zplt
+
 
 def main():
     fig = zplt.figure(1)
@@ -12,9 +13,9 @@ def main():
     zplt.plot(range(100), 'k-')
     # ax.hold(False)
     zplt.show()
-    #print(dir(fig))
-    #print(dir(ax))
-    
+    # print(dir(fig))
+    # print(dir(ax))
+
 
 if __name__ == '__main__':
     main()
